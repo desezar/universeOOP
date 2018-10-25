@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Universe OOP</title>
+	<style type="text/css">
+		body{
+			padding: 0;
+			margin: 0;
+			text-align: center;
+		}
+
+		#canvas{
+			border: 1px solid black;
+			margin-top: 50px;
+		}
+
+	</style>
+</head>
+<body>
+	<canvas id="canvas" width="800" height="600"></canvas>
+
+	<script type="text/javascript">
+			
+		Game = function(){
+
+			var canvasWidth = 800;
+			var canvasHeight = 600;
+
+			var canvas = document.getElementById("canvas");
+			var context = canvas.getContext('2d');
+			
+			var bgImg = new Image();
+				bgImg.src = 'images/bg.png';
+
+			var head = {img: undefined,
+						x: 350,
+						y: 420,
+						width: 40,
+						height: 40,
+						speed: 6,
+						mx: 0,
+						my: 0,
+						run: false,
+					};
+
+				head.img = new Image();
+				head.img.src = 'images/head.png';
+
+			var platform = {
+						x: 350,
+						y: 500,
+						w: 100,
+						h: 5,
+						speed: 23,
+						m: 0,
+
+					}	
+
+			var blocksParam = { col:12, row:4};
+			var blocks = [];
+
+			
+
+			this.frame = () => {
+				context.clearRect(0, 0, 800, 600);
+
+				context.drawImage(bgImg, 0, 0);
+
+				context.beginPath();
+				context.lineWidth = '5';
+				context.strokeStyle = 'white';
+				context.rect(platform.x, platform.y, platform.w, platform.h);
+				context.stroke();
+
+				context.drawImage(head.img, head.x, head.y, head.width, head.height);
+
+				drawLevel();
+
+			};
+
+			
+
+			this.createLevel = () => {
+
+				for(let i = 1; i <= blocksParam.row; i++ ){
+					for(let j = 1; j <= blocksParam.col; j++){
+
+						blocks.push({
+							x: 58 * j,
+							y: 60 * i,
+							w: 50,
+							h: 50,
+							visible: true,
+							text: {
+								x: 58 * j,
+								y: 60 * i,
+								level: i,
+							}
+						});
+
+					}
+				}
+
+				this.drawLevel();
+			}
+
+			this.drawLevel = () => blocks.forEach((e) => {
+				if(e.visible){
+					context.fillStyle = 'white';
+					context.fillRect(e.x, e.y, e.w, e.h);
+					context.stroke();	
+
+					context.fillStyle = 'black';
+					context.font = 'bold 10px sans-serif';
+					context.fillText("OOP " + e.text.level + " lvl.", e.text.x + 2, e.text.y + 25);
+				}
+				
+			});
+
+			this.movePlatform = () => platform.x += platform.m;
+			this.stopPlatform = () => platform.m = 0;
+
+			this.moveHead = () => {head.x += head.mx; head.y += head.my }
+			this.headSpring = () =>  head.my *= -1;
+
+			this.headCheckBoreder = () => {
+				var x = head.x + head.mx;
+				var y = head.y + head.my;
+
+				if( x < 0) {
+
+					head.x = 0;
+					head.mx = head.speed;
+
+				} else if ( x + head.width >  canvasWidth) {
+
+					head.x = canvasWidth - head.width;
+					head.mx = -head.speed;
+
+				}else if ( y < 0) {
+					head.y = 0;
+					head.my = head.speed;
+				}else{
+					this.end();
+				}
+			}
+
+			this.platformSpring = () => head.my = -head.speed;
+
+			this.end = () => {}
+
+
+			this.headStart = () => {
+				head.mx = -head.speed;
+				head.my = -head.speed;
+			}
+
+			this.bang = (elem) => {
+
+				var x = head.x + head.mx;
+				var y = head.y + head.my;
+
+				if(y < elem.y + elem.h && y + head.height > elem.y && 
+					x < elem.x + elem.w && x + head.width > elem.x ){
+
+					return true;
+				}
+			}
+
+
+			this.reDraw = () => {
+
+				if(this.bang(platform)){
+					this.platformSpring();
+				}
+
+				if(platform.m){
+					this.movePlatform();
+				}
+
+				if(head.mx && head.my){
+					this.moveHead();
+				}
+				
+				blocks.forEach((elem) => {
+					if(elem.visible && this.bang(elem)){
+						this.headSpring();
+						elem.visible = false;
+					}
+				});
+
+				this.headCheckBoreder();
+
+				this.frame();
+				window.requestAnimationFrame(() => this.reDraw());
+			}
+
+			init = () => {
+				this.createLevel();
+				this.drawLevel();
+				this.reDraw();
+
+				window.addEventListener('keydown', (e) => {
+
+					switch(e.keyCode){
+						case 37:
+							platform.m = -platform.speed;
+						break;
+
+						case 39:
+							platform.m = platform.speed;
+						break;
+
+						case 32:
+							this.headStart();
+						break;
+
+						default:
+						break;
+					}
+				});
+
+				window.addEventListener('keyup', () => this.stopPlatform());
+			};	
+
+			init();
+
+		}	
+
+		window.addEventListener('load', Game);
+
+	</script>
+</body>
+
+</html>
